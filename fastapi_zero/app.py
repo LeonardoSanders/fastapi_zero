@@ -3,9 +3,16 @@ from http import HTTPStatus
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from fastapi_zero.schemas import Message
+from fastapi_zero.schemas import (
+    Message,
+    UserDB,
+    UserList,
+    UserPublic,
+    UserSchema,
+)
 
 app = FastAPI()
+database = []
 
 
 @app.get(
@@ -16,15 +23,33 @@ app = FastAPI()
 def read_root():
     return {'message': 'Olá mundo!'}
 
-#Exercício 01
-@app.get('/olamundo', response_class=HTMLResponse)
-def ola_mundo():
-    return """
-        <html>
-        <head>
-        <title>Desafio Aula 2</title>
-        </head>
-        <body>
-        <h1> Olá mundo! </h1>
-        </body>
-        </html>"""
+
+@app.post('/users', status_code=HTTPStatus.CREATED, response_model=UserPublic)
+def create_user(user: UserSchema):
+    user_with_id = UserDB(**user.model_dump(), id=len(database) + 1)
+    database.append(user_with_id)
+
+    return user_with_id
+
+
+@app.get('/users', status_code=HTTPStatus.OK, response_model=UserList)
+def read_users():
+    return {'users': database}
+
+
+@app.put('/users', status_code=HTTPStatus.OK, response_model=UserPublic)
+def update_users(user: UserSchema):
+    ...
+
+# Exercício 01
+# @app.get('/olamundo', response_class=HTMLResponse)
+# def ola_mundo():
+#     return """
+#         <html>
+#         <head>
+#         <title>Desafio Aula 2</title>
+#         </head>
+#         <body>
+#         <h1> Olá mundo! </h1>
+#         </body>
+#         </html>"""
