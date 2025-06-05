@@ -41,6 +41,83 @@ def test_read_users(client):
     }
 
 
+def test_update_user(client):
+    response = client.put(
+        '/users/1',
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'secret',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'bob',
+        'email': 'bob@example.com',
+        'id': 1,
+    }
+
+
+def test_update_user_error(client):
+    response = client.put(
+        '/users/-1',
+        json={
+            'username': 'bla',
+            'email': 'bla@example.com',
+            'password': 'bla123',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'USER not found!'}
+
+
+def test_delete_user(client):
+    response = client.delete('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'bob',
+        'email': 'bob@example.com',
+        'id': 1,
+    }
+
+
+def test_delete_user_error(client):
+    response = client.delete('/users/-1')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'USER not found!'}
+
+
+def test_get_user_id(client):
+    client.post(
+        '/users',
+        json={
+            'username': 'example',
+            'email': 'example@example.com',
+            'password': 'secret',
+        },
+    )
+
+    response = client.get('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'example',
+        'email': 'example@example.com',
+        'id': 1,
+    }
+
+
+def test_get_user_id_error(client):
+    response = client.get('/users/-1')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'USER not found!'}
+
+
 # Exercício 01
 # def test_html_ola_mundo(client):
 #     response = client.get('/olamundo')

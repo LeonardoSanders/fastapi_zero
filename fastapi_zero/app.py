@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException
 
 from fastapi_zero.schemas import (
     Message,
@@ -37,9 +36,47 @@ def read_users():
     return {'users': database}
 
 
-@app.put('/users', status_code=HTTPStatus.OK, response_model=UserPublic)
-def update_users(user: UserSchema):
-    ...
+@app.put(
+    '/users/{user_id}', status_code=HTTPStatus.OK, response_model=UserPublic
+)
+def update_users(user_id: int, user: UserSchema):
+    user_with_id = UserDB(**user.model_dump(), id=user_id)
+
+    if 1 > user_id or user_id > len(database):
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='USER not found!',
+        )
+
+    database[user_id - 1] = user_with_id
+
+    return user_with_id
+
+
+@app.delete(
+    '/users/{user_id}', status_code=HTTPStatus.OK, response_model=UserPublic
+)
+def delete_user(user_id: int):
+    if 1 > user_id or user_id > len(database):
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='USER not found!',
+        )
+    return database.pop(user_id - 1)
+
+
+@app.get(
+    '/users/{user_id}', status_code=HTTPStatus.OK, response_model=UserPublic
+)
+def get_user_id(user_id: int):
+    if 1 > user_id or user_id > len(database):
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='USER not found!',
+        )
+
+    return database[user_id - 1]
+
 
 # Exercício 01
 # @app.get('/olamundo', response_class=HTMLResponse)
