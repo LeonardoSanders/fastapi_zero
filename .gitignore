@@ -1,6 +1,5 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
-database.db
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -125,7 +124,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+
 .venv
 env/
 venv/
