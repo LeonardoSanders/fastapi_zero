@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 import pytest_asyncio
+from factory import Factory, LazyAttribute, Sequence  # type: ignore
 from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -71,18 +72,26 @@ def mock_db_time():
 
 @pytest_asyncio.fixture
 async def user(session: AsyncSession):
-    password = 'secret'
-    user = User(
-        username='test',
-        email='test@example.com',
-        password=get_password_hash(password),
-    )
+    user = UserFactory()
 
     session.add(user)
     await session.commit()
     await session.refresh(user)
 
-    user.clean_password = password  # type: ignore
+    user.clean_password = f'{user.username}@example.com'  # type: ignore
+
+    return user
+
+
+@pytest_asyncio.fixture
+async def other_user(session: AsyncSession):
+    user = UserFactory()
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    user.clean_password = f'{user.username}@example.com'  # type: ignore
 
     return user
 
@@ -95,3 +104,14 @@ def token(client, user):
     )
 
     return response.json()['access_token']
+
+
+class UserFactory(Factory):
+    class Meta:
+        model = User
+
+    username = Sequence(lambda n: f'test{n}')
+    email = LazyAttribute(lambda obj: f'{obj.username}@test.com')
+    password = LazyAttribute(
+        lambda obj: get_password_hash(f'{obj.username}@example.com')
+    )

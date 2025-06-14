@@ -4,7 +4,12 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jwt import DecodeError, decode, encode  # type: ignore
+from jwt import (  # type: ignore
+    DecodeError,
+    ExpiredSignatureError,
+    decode,
+    encode,
+)
 from pwdlib import PasswordHash  # type: ignore
 from sqlalchemy import select
 
@@ -62,7 +67,10 @@ async def get_current_user(
         subject_email = payload.get('sub')  # 5
         if not subject_email:  # 6
             raise credentials_exception
+
     except DecodeError:  # 7
+        raise credentials_exception
+    except ExpiredSignatureError:
         raise credentials_exception
 
     user = await session.scalar(  # 8
