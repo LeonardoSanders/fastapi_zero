@@ -41,6 +41,12 @@ class FilterTodo(FilterPage):
     state: TodoState | None = None
 
 
+class TodoUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    state: TodoState | None = None
+
+
 class TodoSchema(BaseModel):
     title: str
     description: str
