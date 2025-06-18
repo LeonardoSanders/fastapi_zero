@@ -3,6 +3,7 @@ from http import HTTPStatus
 import factory.fuzzy
 import pytest
 from factory import Factory, Faker  # type: ignore
+from sqlalchemy import select
 
 from fastapi_zero.models import Todo, TodoState
 
@@ -17,23 +18,55 @@ class TodoFactory(Factory):
     user_id = 1
 
 
-def test_create_todo(client, token):
-    response = client.post(
-        '/todos',
-        headers={'Authorization': f'Bearer {token}'},
-        json={
-            'title': 'Test todo',
-            'description': 'Test todo description',
-            'state': 'draft',
-        },
-    )
+def test_create_todo(client, token, mock_db_time):
+    with mock_db_time(model=Todo) as time:
+        response = client.post(
+            '/todos/',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'title': 'Test todo',
+                'description': 'Test todo description',
+                'state': 'draft',
+            },
+        )
 
     assert response.json() == {
         'id': 1,
         'title': 'Test todo',
         'description': 'Test todo description',
         'state': 'draft',
+        'created_at': time.isoformat(),
+        'updated_at': time.isoformat(),
     }
+
+
+@pytest.mark.asyncio
+async def test_get_todo_validation_by_fields(
+    client, token, mock_db_time, session, user
+):
+    with mock_db_time(model=Todo) as time:
+        todo = TodoFactory.create(user_id=user.id)
+        session.add(todo)
+        await session.commit()
+
+    await session.refresh(todo)
+
+    response = client.get(
+        '/todos',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['todos'] == [
+        {
+            'title': todo.title,
+            'description': todo.description,
+            'state': todo.state,
+            'id': todo.id,
+            'created_at': time.isoformat(),
+            'updated_at': time.isoformat(),
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -183,3 +216,19 @@ def test_patch_todo_error(client, token):
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'Task not found.'}
+
+
+@pytest.mark.asyncio
+async def test_create_todo_error(session, user):
+    todo = Todo(
+        title='Test Todo',
+        description='Test Desc',
+        state='test', # type: ignore
+        user_id=user.id,
+    )
+
+    session.add(todo)
+    await session.commit()
+
+    with pytest.raises(LookupError):
+        await session.scalar(select(Todo))

@@ -47,10 +47,10 @@ async def list_todos(
     query = select(Todo).where(Todo.user_id == user.id)
 
     filters = {
-    "title": Todo.title,
-    "description": Todo.description,
-    "state": Todo.state,
-}
+        'title': Todo.title,
+        'description': Todo.description,
+        'state': Todo.state,
+    }
     for key, column in filters.items():
         value = getattr(todo_filter, key, None)
     if value:

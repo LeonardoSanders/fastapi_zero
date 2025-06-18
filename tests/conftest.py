@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from fastapi_zero.app import app
 from fastapi_zero.database import get_session
-from fastapi_zero.models import User, table_registry
+from fastapi_zero.models import Todo, User, table_registry
 from fastapi_zero.security import get_password_hash
 from fastapi_zero.settings import Settings
 
@@ -51,7 +51,7 @@ async def session():
 
 
 @contextmanager
-def _mock_db_time(model, time=datetime(2025, 6, 4)):
+def _mock_db_time(model, time=datetime(2025, 6, 17)):
     def fake_time_hook(mapper, connection, target):
         if hasattr(target, 'created_at'):
             target.created_at = time
@@ -59,10 +59,12 @@ def _mock_db_time(model, time=datetime(2025, 6, 4)):
             target.updated_at = time
 
     event.listen(User, 'before_insert', fake_time_hook)
+    event.listen(Todo, 'before_insert', fake_time_hook)
 
     yield time
 
     event.remove(User, 'before_insert', fake_time_hook)
+    event.remove(Todo, 'before_insert', fake_time_hook)
 
 
 @pytest.fixture
