@@ -46,18 +46,19 @@ async def list_todos(
 ):
     query = select(Todo).where(Todo.user_id == user.id)
 
-    filters = {
-        'title': Todo.title,
-        'description': Todo.description,
-        'state': Todo.state,
-    }
-    for key, column in filters.items():
-        value = getattr(todo_filter, key, None)
-    if value:
-        query = query.filter(column.contains(value))
+    if todo_filter.title:
+        query = query.filter(Todo.title.contains(todo_filter.title))
+
+    if todo_filter.description:
+        query = query.filter(
+            Todo.description.contains(todo_filter.description)
+        )
+
+    if todo_filter.state:
+        query = query.filter(Todo.state == todo_filter.state)
 
     todos = await session.scalars(
-        query.limit(todo_filter.limit).offset(todo_filter.offset)
+        query.offset(todo_filter.offset).limit(todo_filter.limit)
     )
 
     return {'todos': todos.all()}

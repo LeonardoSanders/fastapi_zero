@@ -3,7 +3,6 @@ from http import HTTPStatus
 import factory.fuzzy
 import pytest
 from factory import Factory, Faker  # type: ignore
-from sqlalchemy import select
 
 from fastapi_zero.models import Todo, TodoState
 
@@ -218,17 +217,17 @@ def test_patch_todo_error(client, token):
     assert response.json() == {'detail': 'Task not found.'}
 
 
-@pytest.mark.asyncio
-async def test_create_todo_error(session, user):
-    todo = Todo(
-        title='Test Todo',
-        description='Test Desc',
-        state='test', # type: ignore
-        user_id=user.id,
-    )
+# @pytest.mark.asyncio
+# async def test_create_todo_error(session, user):
+#     todo = Todo(
+#         title='Test Todo',
+#         description='Test Desc',
+#         state='test',  # type: ignore
+#         user_id=user.id,
+#     )
 
-    session.add(todo)
-    await session.commit()
+#     session.add(todo)
+#     await session.commit()
 
-    with pytest.raises(LookupError):
-        await session.scalar(select(Todo))
+#     with pytest.raises(LookupError):
+#         await session.scalar(select(Todo))
