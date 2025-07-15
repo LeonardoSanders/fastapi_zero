@@ -52,46 +52,46 @@ def create_access_token(data: dict):
 
 
 async def get_current_user(
-    session: AsyncSession = Depends(get_session),  # 1
-    token: str = Depends(oauth2_schema),  # 2
+    session: AsyncSession = Depends(get_session),
+    token: str = Depends(oauth2_schema),
 ):
-    credentials_exception = HTTPException(  # 3
+    """
+    Decodifica o token de acesso, valida as credenciais e retorna o usuário.
+
+    - **Args**:
+        - `session` (AsyncSession): Sessão de banco de dados injetada.
+        - `token` (str): Token JWT extraído do cabeçalho de autorização.
+
+    - **Raises**:
+        - `HTTPException(401)`: Se o token for inválido, expirado,
+          não contiver o payload esperado ou o usuário não for encontrado.
+
+    - **Returns**:
+        - `User`: O objeto do usuário autenticado.
+    """
+    credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
         detail='Could not validate credentials',
         headers={'WWW-Authenticate': 'Bearer'},
     )
     try:
-        payload = decode(  # 4
+        payload = decode(
             token, settings.SECRET_KEY, algorithms=settings.ALGORITHM
         )
-        subject_email = payload.get('sub')  # 5
-        if not subject_email:  # 6
+        subject_email = payload.get('sub')
+        if not subject_email:
             raise credentials_exception
 
-    except DecodeError:  # 7
+    except DecodeError:
         raise credentials_exception
     except ExpiredSignatureError:
         raise credentials_exception
 
-    user = await session.scalar(  # 8
+    user = await session.scalar(
         select(User).where(User.email == subject_email)
     )
 
-    if not user:  # 9
+    if not user:
         raise credentials_exception
 
-    return user  # 10
-
-
-"""
-1-Injeta uma sessão de banco de dados;
-2-Extrai o token do cabeçalho de autorização;
-3-Define uma exceção padrão para credenciais inválidas;
-4-Decodifica e verifica o token;
-5-Obtém o email do payload (claim 'sub');
-6-Se não houver email no payload, lança exceção;
-7-Captura erros de decodificação/assinatura;
-8-Busca o usuário no banco de dados usando o email do payload;
-9-Se o usuário não for encontrado (mesmo com token válido), lança exceção
-10-Retorna o objeto User;
-"""
+    return user
